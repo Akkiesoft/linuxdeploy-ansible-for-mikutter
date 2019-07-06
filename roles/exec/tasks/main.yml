@@ -1,0 +1,16 @@
+- name: clone darealshinji/AppImageKit-checkrt
+  git:
+    repo: https://github.com/darealshinji/AppImageKit-checkrt
+    dest: "{{ path.exec }}"
+    update: no
+
+- name: update wget url in Makefile
+  replace:
+    path: "{{ path.exec }}/Makefile"
+    regexp: "appimagetool/"
+    replace: ""
+
+- name: compile exec.so
+  command: "make -j {{ cores }}"
+  args:
+    chdir: "{{ path.exec }}"

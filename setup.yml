@@ -1,0 +1,15 @@
+- name: setup appimage environment
+  hosts: all
+  vars:
+     work_dir: "{{ ansible_user_dir }}"
+     path:
+       linuxdeploy: "{{ work_dir }}/linuxdeploy"
+       ld_plugin_appimage: "{{ work_dir }}/linuxdeploy-plugin-appimage"
+       exec: "{{ work_dir }}/AppImageKit-checkrt"
+  roles:
+  - prepare
+  - docker
+  - exec
+  - linuxdeploy
+  - linuxdeploy-plugin-appimage
+  - linuxdeploy-appimage

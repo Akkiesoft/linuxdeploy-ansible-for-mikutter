@@ -1,0 +1,44 @@
+- name: clone linuxdeploy/linuxdeploy-plugin-appimage
+  git:
+    repo: "https://github.com/linuxdeploy/linuxdeploy-plugin-appimage"
+    dest: "{{ path.ld_plugin_appimage }}"
+    update: no
+
+- name: run cmake
+  command: "cmake {{ path.ld_plugin_appimage }} -DCMAKE_INSTALL_PREFIX=/usr -DUSE_CCACHE=ON -DCMAKE_BUILD_TYPE=RelWithDebInfo"
+  args:
+    chdir: "{{ path.ld_plugin_appimage }}"
+
+- name: compile linuxdeploy-plugin-appimage
+  command: "make -j {{ cores }} install DESTDIR={{ path.ld_plugin_appimage }}/AppDir"
+  args:
+    chdir: "{{ path.ld_plugin_appimage }}"
+
+- get_url:
+    url: "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-{{ package_arch }}.AppImage"
+    dest: "{{ path.ld_plugin_appimage }}"
+    mode: 0755
+
+- command: "{{ path.ld_plugin_appimage }}/appimagetool-{{ package_arch }}.AppImage --appimage-extract"
+  args:
+    chdir: "{{ path.ld_plugin_appimage }}"
+    creates: "{{ path.ld_plugin_appimage }}/AppDir/appimagetool-prefix"
+
+- command: "mv {{ path.ld_plugin_appimage }}/squashfs-root {{ path.ld_plugin_appimage }}/AppDir/appimagetool-prefix"
+  args:
+    creates: "{{ path.ld_plugin_appimage }}/AppDir/appimagetool-prefix"
+
+- file:
+    src: "../../appimagetool-prefix/AppRun"
+    path: "{{ path.ld_plugin_appimage }}/AppDir/usr/bin/appimagetool"
+    state: link
+
+- command: "{{ path.linuxdeploy }}/bin/linuxdeploy --appdir AppDir -d {{ path.ld_plugin_appimage }}/resources/linuxdeploy-plugin-appimage.desktop -i {{ path.ld_plugin_appimage }}/resources/linuxdeploy-plugin-appimage.svg"
+  args:
+    chdir: "{{ path.ld_plugin_appimage }}"
+
+- command: AppDir/AppRun --appdir AppDir
+  args:
+    chdir: "{{ path.ld_plugin_appimage }}"
+  environment:
+    UPD_INFO: "gh-releases-zsync|linuxdeploy|linuxdeploy-plugin-appimage|continuous|linuxdeploy-plugin-appimage-{{ package_arch }}.AppImage"

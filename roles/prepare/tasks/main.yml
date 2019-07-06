@@ -1,0 +1,33 @@
+- name: set package_arch
+  set_fact:
+    package_arch: "{{ ansible_machine }}"
+
+- name: set package_arch for raspberry pi
+  set_fact:
+    package_arch: 'armhf'
+  when: ansible_machine == 'armv7l' or ansible_machine == 'armv6l'
+ 
+- name: get core count
+  command: nproc
+  register: cores
+  changed_when: no
+
+- name: set core count
+  set_fact:
+    cores: "{{ cores.stdout }}"
+
+- name: install required packages
+  apt:
+    name:
+    - apt-transport-https
+    - ca-certificates
+    - curl
+    - gnupg2
+    - software-properties-common
+    - cmake
+    - libjpeg-dev
+    - cimg-dev
+    - patchelf
+    update_cache: yes
+    cache_valid_time: 7200
+  become: yes

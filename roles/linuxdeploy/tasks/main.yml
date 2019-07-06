@@ -1,0 +1,15 @@
+- name: clone linuxdeploy/linuxdeploy
+  git:
+    repo: https://github.com/linuxdeploy/linuxdeploy
+    dest: "{{ path.linuxdeploy }}"
+    update: no
+
+- name: run cmake
+  command: "cmake {{ path.linuxdeploy }} -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=RelWithDebInfo"
+  args:
+    chdir: "{{ path.linuxdeploy }}"
+
+- name: compile linuxdeploy
+  command: "make -j {{ cores }}"
+  args:
+    chdir: "{{ path.linuxdeploy }}"

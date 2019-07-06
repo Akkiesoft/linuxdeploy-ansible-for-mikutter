@@ -1,0 +1,73 @@
+- name: get strip path
+  command: which strip
+  register: strip
+  changed_when: no
+
+- set_fact:
+    opt: |
+      --appdir AppDir -e bin/linuxdeploy
+      -i {{ path.linuxdeploy }}/resources/linuxdeploy.png
+      -d {{ path.linuxdeploy }}/resources/linuxdeploy.desktop -e
+      /usr/bin/patchelf
+      -e {{ strip.stdout }}
+    info: "gh-releases-zsync|linuxdeploy|linuxdeploy|continuous|linuxdeploy-{{ package_arch }}.AppImage"
+
+- name: run linuxdeploy
+  command: "bin/linuxdeploy {{ opt }}"
+  args:
+    chdir: "{{ path.linuxdeploy }}"
+
+- name: create plugins directory
+  file:
+    path: "{{ path.linuxdeploy }}/AppDir/plugins"
+    state: directory
+
+- name: copy linuxdeploy-plugin-appimage appimage
+  copy:
+    src: "{{ path.ld_plugin_appimage }}/linuxdeploy-plugin-appimage-{{ package_arch }}.AppImage"
+    dest: "{{ path.linuxdeploy }}"
+    remote_src: yes
+    mode: 0755
+
+- name: extract linuxdeploy-plugin-appimage appimage
+  command: "{{ path.linuxdeploy }}/linuxdeploy-plugin-appimage-{{ package_arch }}.AppImage --appimage-extract"
+  args:
+    chdir: "{{ path.linuxdeploy }}"
+    creates: "{{ path.linuxdeploy }}/AppDir/plugins/linuxdeploy-plugin-appimage"
+
+- name: move extracted linuxdeploy-plugin-appimage appimage into plugins
+  command: "mv {{ path.linuxdeploy }}/squashfs-root {{ path.linuxdeploy }}/AppDir/plugins/linuxdeploy-plugin-appimage"
+  args:
+    creates: "{{ path.linuxdeploy }}/AppDir/plugins/linuxdeploy-plugin-appimage"
+
+- name: create linuxdeploy-plugin-appimage link
+  file:
+    src: "../../plugins/linuxdeploy-plugin-appimage/AppRun"
+    path: "{{ path.linuxdeploy }}/AppDir/usr/bin/linuxdeploy-plugin-appimage"
+    state: link
+
+- name: build appimage using plugin
+  command: AppDir/usr/bin/linuxdeploy-plugin-appimage --appdir AppDir/
+  args:
+    chdir: "{{ path.linuxdeploy }}"
+  environment:
+    UPD_INFO: "{{ info }}"
+
+- name: rename appimage to avoid text file busy issues when using it to create another one
+  command: "mv linuxdeploy-{{ package_arch }}.AppImage test.AppImage"
+  args:
+    chdir: "{{ path.linuxdeploy }}"
+
+- name: verify that the resulting appimage works
+  command: "./test.AppImage {{ opt }}"
+  args:
+    chdir: "{{ path.linuxdeploy }}"
+  environment:
+    UPD_INFO: "{{ info }}"
+
+- name: check whether appimage plugin is found and works
+  command: "./test.AppImage {{ opt }} --output appimage"
+  args:
+    chdir: "{{ path.linuxdeploy }}"
+  environment:
+    UPD_INFO: "{{ info }}"

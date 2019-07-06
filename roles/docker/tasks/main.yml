@@ -1,0 +1,32 @@
+- name: add apt source
+  apt_repository:
+    repo: deb https://download.docker.com/linux/debian/ buster nightly
+    state: present
+  become: yes
+
+- name: add apt key
+  apt_key:
+    url: https://download.docker.com/linux/debian/gpg
+    state: present
+  become: yes
+
+- name: install docker-ce
+  apt:
+    name: docker-ce
+    update_cache: yes
+    cache_valid_time: 7200
+  become: yes
+
+- name: add pi user into docker group
+  user:
+    name: pi
+    groups: docker
+    append: yes
+  become: yes
+
+- name: set startup docker.service
+  systemd:
+    name: docker
+    enabled: yes
+    state: started
+  become: yes
