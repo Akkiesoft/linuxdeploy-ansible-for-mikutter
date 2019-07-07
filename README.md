@@ -12,3 +12,8 @@ armhfバイナリとして出てくるが、実際には実行するRaspberry Pi
 
 * Ansible環境
 * Raspbian Buster (Dockerのところでハードコードしてるだけでそこを直せばStretchでも)
+
+## LICENSE
+
+MIT License.
+
